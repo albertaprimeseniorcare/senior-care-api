@@ -7,7 +7,7 @@ import traceback
 
 app = FastAPI()
 
-# CORS Middleware (Frontend बाट आउने request को लागि)
+# CORS Middleware (Frontend बाट आउने request लाई allow गर्ने)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -20,28 +20,29 @@ class PromptRequest(BaseModel):
 
 @app.post("/ask-ai")
 async def get_ai_response(request: PromptRequest):
-    # API Key चेक गर्ने
     api_key = os.environ.get("AI_API_KEY")
+    
     if not api_key:
-        raise HTTPException(status_code=500, detail="Server Configuration Error: AI_API_KEY is missing.")
+        raise HTTPException(status_code=500, detail="Server Configuration Error: API Key missing.")
     
     try:
         genai.configure(api_key=api_key)
         
-        # मोडल initialize गर्ने
+        # यहाँ 'gemini-1.0-pro' प्रयोग गरिएको छ जुन सबै API Key मा स्थिर छ
         model = genai.GenerativeModel(
-            'gemini-1.5-flash',
+            'gemini-1.0-pro',
             system_instruction="You are a helpful assistant for Alberta Prime Senior Care Agency."
         )
         
-        # AI बाट उत्तर प्राप्त गर्ने
         response = model.generate_content(request.prompt)
         return {"response": response.text}
         
     except Exception as e:
-        # Error details लाई Render logs मा देखाउन
         error_info = traceback.format_exc()
         print(f"DEBUG ERROR: {error_info}")
-        
-        # Frontend लाई स्पष्ट Error सन्देश पठाउन
-        raise HTTPException(status_code=500, detail=f"AI Service Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Server रन भइरहेको छ कि छैन भनेर जाँच्न (Root Route)
+@app.get("/")
+async def root():
+    return {"message": "Alberta Prime API is live and running!"}
