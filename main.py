@@ -1,7 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 import os
 import google.generativeai as genai
+import traceback
 
 app = FastAPI()
 
@@ -12,19 +14,28 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+class PromptRequest(BaseModel):
+    prompt: str
+
 @app.get("/")
-async def check_models():
+async def root():
+    return {"message": "Alberta Prime AI is ready."}
+
+@app.post("/ask-ai")
+async def get_ai_response(request: PromptRequest):
     api_key = os.environ.get("AI_API_KEY")
     if not api_key:
-        return {"error": "API Key is missing in Render Environment"}
+        raise HTTPException(status_code=500, detail="API Key missing.")
     
-    genai.configure(api_key=api_key)
     try:
-        # API Key ले देख्न सक्ने सबै मोडलहरूको लिस्ट तान्ने
-        models = [m.name for m in genai.list_models()]
-        return {
-            "message": "Model Check Complete",
-            "available_models": models
-        }
+        genai.configure(api_key=api_key)
+        
+        # यहाँ हामीले तपाईंको उपलब्ध लिस्टबाट ठ्याक्कै मिल्ने नाम राखेका छौँ
+        model = genai.GenerativeModel('models/gemini-2.5-flash')
+        
+        response = model.generate_content(request.prompt)
+        return {"response": response.text}
+        
     except Exception as e:
-        return {"error": str(e)}
+        print(f"DEBUG ERROR: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=str(e))
