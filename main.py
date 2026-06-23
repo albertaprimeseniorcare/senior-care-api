@@ -7,7 +7,7 @@ import traceback
 
 app = FastAPI()
 
-# CORS Middleware (Frontend बाट आउने request लाई allow गर्ने)
+# CORS Middleware (Frontend communication को लागि)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -17,6 +17,15 @@ app.add_middleware(
 
 class PromptRequest(BaseModel):
     prompt: str
+
+# Helper function: उपलब्ध मोडलहरूबाट सही मोडल छान्ने
+def get_best_model():
+    models = genai.list_models()
+    for m in models:
+        # generateContent support गर्ने मोडल खोज्ने
+        if 'generateContent' in m.supported_generation_methods:
+            return m.name
+    return 'gemini-1.5-flash' # यदि कुनै भेटिएन भने Default
 
 @app.post("/ask-ai")
 async def get_ai_response(request: PromptRequest):
@@ -28,9 +37,11 @@ async def get_ai_response(request: PromptRequest):
     try:
         genai.configure(api_key=api_key)
         
-        # यहाँ 'gemini-1.0-pro' प्रयोग गरिएको छ जुन सबै API Key मा स्थिर छ
+        # यहाँ हामी आफै मोडलको नाम खोज्छौं
+        model_name = get_best_model()
+        
         model = genai.GenerativeModel(
-            'gemini-1.0-pro',
+            model_name,
             system_instruction="You are a helpful assistant for Alberta Prime Senior Care Agency."
         )
         
@@ -40,9 +51,8 @@ async def get_ai_response(request: PromptRequest):
     except Exception as e:
         error_info = traceback.format_exc()
         print(f"DEBUG ERROR: {error_info}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"AI Service Error: {str(e)}")
 
-# Server रन भइरहेको छ कि छैन भनेर जाँच्न (Root Route)
 @app.get("/")
 async def root():
     return {"message": "Alberta Prime API is live and running!"}
