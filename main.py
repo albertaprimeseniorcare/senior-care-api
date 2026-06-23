@@ -31,14 +31,16 @@ async def get_ai_response(request: PromptRequest):
         genai.configure(api_key=api_key)
         
         # System instruction सहित model initialize गर्ने
-        model = genai.GenerativeModel(
-            'gemini-1.5-flash',
-            system_instruction="You are a helpful assistant for Alberta Prime Senior Care Agency."
-        )
+        # मोडलको नाम यसरी राखेर हेर्नुहोस्
+model = genai.GenerativeModel(
+    'gemini-1.5-flash', 
+    system_instruction="You are a helpful assistant for Alberta Prime Senior Care Agency."
+)
         
         # AI सँग उत्तर माग्ने
         response = model.generate_content(request.prompt)
         return {"response": response.text}
         
     except Exception as e:
+        print(f"DEBUG ERROR: {str(e)}") # यसले Render को Logs मा विस्तृत error देखाउँछ
         raise HTTPException(status_code=500, detail=str(e))
