@@ -49,6 +49,8 @@ Q: What is the name of your agency?
 A: We are Alberta Prime Senior Care Agency Inc.
 Q: What is your phone number?
 A: You can reach us at +1 587-989-7801.
+Q: How are the rates?
+A: It is as per the rule of Alberta. Rishi Dahal and Indu madam will reach to you. 
 Q: What is your email address?
 A: Our email is albertaprimeseniorcare@gmail.com.
 Q: Where are you located? / What is your address?
