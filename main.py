@@ -17,44 +17,24 @@ app.add_middleware(
 class PromptRequest(BaseModel):
     prompt: str
 
-# स्मार्ट मोडल छनोटकर्ता
-def get_model():
-    # प्राथमिकता क्रम: flash -> 1.5 -> pro
-    priority_list = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.0-pro']
-    
-    genai.configure(api_key=os.environ.get("AI_API_KEY"))
-    
-    # उपलब्ध मोडलहरूको लिस्ट तान्ने
-    available = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-    
-    # प्राथमिकता अनुसार मोडल छान्ने
-    for model_name in priority_list:
-        if any(model_name in m for m in available):
-            return model_name
-            
-    return 'gemini-1.5-flash' # Default विकल्प
+@app.get("/")
+async def root():
+    return {"message": "Alberta Prime AI is ready."}
 
 @app.post("/ask-ai")
 async def get_ai_response(request: PromptRequest):
     api_key = os.environ.get("AI_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="API Key missing.")
+    
     genai.configure(api_key=api_key)
     
     try:
-        # मोडलको नाम सिधै नलेख्नुहोस्, यो तरिकाले सिधै उपलब्ध मोडल लिन्छ
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        # यहाँ 'models/' थप्नु अनिवार्य छ, नत्र 404 आउँछ
+        model = genai.GenerativeModel('models/gemini-1.5-flash')
         response = model.generate_content(request.prompt)
         return {"response": response.text}
         
     except Exception as e:
-        # यदि 404 आयो भने, हामी सिधै 'gemini-1.0-pro' मा स्विच गर्छौँ
-        try:
-            model = genai.GenerativeModel('gemini-1.0-pro')
-            response = model.generate_content(request.prompt)
-            return {"response": response.text}
-        except Exception as e2:
-            print(f"DEBUG ERROR: {str(e2)}")
-            raise HTTPException(status_code=500, detail=str(e2))
-
-@app.get("/")
-async def root():
-    return {"message": "Alberta Prime AI is ready."}
+        print(f"DEBUG ERROR: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=str(e))
