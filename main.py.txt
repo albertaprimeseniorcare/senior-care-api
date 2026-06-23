@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import os
-from openai import OpenAI
+import google.generativeai as genai
 
 app = FastAPI()
 
@@ -26,17 +26,19 @@ async def get_ai_response(request: PromptRequest):
     if not api_key:
         raise HTTPException(status_code=500, detail="API Key missing on server.")
     
-    client = OpenAI(api_key=api_key)
-    
     try:
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant for Alberta Prime Senior Care Agency."},
-                {"role": "user", "content": request.prompt}
-            ]
+        # Google Gemini AI setup गर्ने
+        genai.configure(api_key=api_key)
+        
+        # System instruction सहित model initialize गर्ने
+        model = genai.GenerativeModel(
+            'gemini-1.5-flash',
+            system_instruction="You are a helpful assistant for Alberta Prime Senior Care Agency."
         )
-        return {"response": response.choices[0].message.content}
+        
+        # AI सँग उत्तर माग्ने
+        response = model.generate_content(request.prompt)
+        return {"response": response.text}
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
