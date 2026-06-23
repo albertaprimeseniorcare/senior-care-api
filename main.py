@@ -7,7 +7,6 @@ import traceback
 
 app = FastAPI()
 
-# CORS Middleware (Frontend communication को लागि)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -18,27 +17,32 @@ app.add_middleware(
 class PromptRequest(BaseModel):
     prompt: str
 
-# Helper function: उपलब्ध मोडलहरूबाट सही मोडल छान्ने
-def get_best_model():
-    models = genai.list_models()
-    for m in models:
-        # generateContent support गर्ने मोडल खोज्ने
-        if 'generateContent' in m.supported_generation_methods:
-            return m.name
-    return 'gemini-1.5-flash' # यदि कुनै भेटिएन भने Default
+# स्मार्ट मोडल छनोटकर्ता
+def get_model():
+    # प्राथमिकता क्रम: flash -> 1.5 -> pro
+    priority_list = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.0-pro']
+    
+    genai.configure(api_key=os.environ.get("AI_API_KEY"))
+    
+    # उपलब्ध मोडलहरूको लिस्ट तान्ने
+    available = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+    
+    # प्राथमिकता अनुसार मोडल छान्ने
+    for model_name in priority_list:
+        if any(model_name in m for m in available):
+            return model_name
+            
+    return 'gemini-1.5-flash' # Default विकल्प
 
 @app.post("/ask-ai")
 async def get_ai_response(request: PromptRequest):
     api_key = os.environ.get("AI_API_KEY")
-    
     if not api_key:
-        raise HTTPException(status_code=500, detail="Server Configuration Error: API Key missing.")
+        raise HTTPException(status_code=500, detail="API Key missing.")
     
     try:
         genai.configure(api_key=api_key)
-        
-        # यहाँ हामी आफै मोडलको नाम खोज्छौं
-        model_name = get_best_model()
+        model_name = get_model()
         
         model = genai.GenerativeModel(
             model_name,
@@ -49,10 +53,9 @@ async def get_ai_response(request: PromptRequest):
         return {"response": response.text}
         
     except Exception as e:
-        error_info = traceback.format_exc()
-        print(f"DEBUG ERROR: {error_info}")
-        raise HTTPException(status_code=500, detail=f"AI Service Error: {str(e)}")
+        print(f"DEBUG ERROR: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/")
 async def root():
-    return {"message": "Alberta Prime API is live and running!"}
+    return {"message": "Alberta Prime AI is ready."}
