@@ -29,8 +29,9 @@ async def get_ai_response(request: PromptRequest):
     
     try:
         genai.configure(api_key=api_key)
-        # नयाँ भर्सनमा मोडलको नाम यसरी सिधै राख्न सकिन्छ
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        # सबैभन्दा stable र पुरानो मोडल प्रयोग गर्दै, जसले 404 दिँदैन
+        model = genai.GenerativeModel('gemini-pro')
         
         response = model.generate_content(request.prompt)
         return {"response": response.text}
