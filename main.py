@@ -37,24 +37,23 @@ def get_model():
 @app.post("/ask-ai")
 async def get_ai_response(request: PromptRequest):
     api_key = os.environ.get("AI_API_KEY")
-    if not api_key:
-        raise HTTPException(status_code=500, detail="API Key missing.")
+    genai.configure(api_key=api_key)
     
     try:
-        genai.configure(api_key=api_key)
-        model_name = get_model()
-        
-        model = genai.GenerativeModel(
-            model_name,
-            system_instruction="You are a helpful assistant for Alberta Prime Senior Care Agency."
-        )
-        
+        # मोडलको नाम सिधै नलेख्नुहोस्, यो तरिकाले सिधै उपलब्ध मोडल लिन्छ
+        model = genai.GenerativeModel('gemini-1.5-flash')
         response = model.generate_content(request.prompt)
         return {"response": response.text}
         
     except Exception as e:
-        print(f"DEBUG ERROR: {traceback.format_exc()}")
-        raise HTTPException(status_code=500, detail=str(e))
+        # यदि 404 आयो भने, हामी सिधै 'gemini-1.0-pro' मा स्विच गर्छौँ
+        try:
+            model = genai.GenerativeModel('gemini-1.0-pro')
+            response = model.generate_content(request.prompt)
+            return {"response": response.text}
+        except Exception as e2:
+            print(f"DEBUG ERROR: {str(e2)}")
+            raise HTTPException(status_code=500, detail=str(e2))
 
 @app.get("/")
 async def root():
