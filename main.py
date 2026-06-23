@@ -27,18 +27,12 @@ async def get_ai_response(request: PromptRequest):
     
     try:
         genai.configure(api_key=api_key)
-        
-        # यहाँ indent (space) को ख्याल राख्नुहोला
         model = genai.GenerativeModel(
             'gemini-1.5-flash',
             system_instruction="You are a helpful assistant for Alberta Prime Senior Care Agency."
         )
-        
         response = model.generate_content(request.prompt)
         return {"response": response.text}
         
-  except Exception as e:
-        import traceback
-        error_details = traceback.format_exc()
-        print(f"DEBUG ERROR: {error_details}") # यो Render Log मा देखिनेछ
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
