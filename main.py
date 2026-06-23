@@ -27,11 +27,11 @@ async def get_ai_response(request: PromptRequest):
     if not api_key:
         raise HTTPException(status_code=500, detail="API Key missing.")
     
-    genai.configure(api_key=api_key)
-    
     try:
-        # यहाँ 'models/' थप्नु अनिवार्य छ, नत्र 404 आउँछ
-        model = genai.GenerativeModel('models/gemini-1.5-flash')
+        genai.configure(api_key=api_key)
+        # नयाँ भर्सनमा मोडलको नाम यसरी सिधै राख्न सकिन्छ
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
         response = model.generate_content(request.prompt)
         return {"response": response.text}
         
