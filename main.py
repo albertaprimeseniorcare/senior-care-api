@@ -37,6 +37,8 @@ async def get_ai_response(request: PromptRequest):
         response = model.generate_content(request.prompt)
         return {"response": response.text}
         
-    except Exception as e:
-        # यहाँ 'except' block हुनु अनिवार्य छ
+  except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"DEBUG ERROR: {error_details}") # यो Render Log मा देखिनेछ
         raise HTTPException(status_code=500, detail=str(e))
